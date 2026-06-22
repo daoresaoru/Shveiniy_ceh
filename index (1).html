@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ШвейПро — Управление фабрикой</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1a2e;
+    --fabric: #16213e;
+    --thread: #e94560;
+    --seam: #0f3460;
+    --linen: #f5f0e8;
+    --cream: #faf8f4;
+    --gold: #c9a84c;
+    --muted: #6b7280;
+    --success: #10b981;
+    --warn: #f59e0b;
+    --danger: #ef4444;
+    --border: #e5e0d8;
+    --card: #ffffff;
+    --sidebar-w: 240px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* ── SIDEBAR ── */
+  #sidebar {
+    width: var(--sidebar-w);
+    background: var(--fabric);
+    color: #c9d1d9;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    z-index: 100;
+  }
+
+  .sidebar-logo {
+    padding: 28px 20px 20px;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+  }
+  .sidebar-logo .brand {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    color: #fff;
+    letter-spacing: -.3px;
+  }
+  .sidebar-logo .sub {
+    font-size: 11px;
+    color: var(--gold);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  nav { flex: 1; padding: 16px 0; overflow-y: auto; }
+
+  .nav-section {
+    font-size: 10px;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,.3);
+    padding: 14px 20px 6px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 13.5px;
+    transition: all .15s;
+    border-left: 3px solid transparent;
+    color: rgba(255,255,255,.65);
+  }
+  .nav-item:hover { background: rgba(255,255,255,.06); color: #fff; }
+  .nav-item.active {
+    background: rgba(233,69,96,.12);
+    border-left-color: var(--thread);
+    color: #fff;
+  }
+  .nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
+
+  .sidebar-footer {
+    padding: 16px 20px;
+    border-top: 1px solid rgba(255,255,255,.08);
+    font-size: 12px;
+    color: rgba(255,255,255,.3);
+  }
+
+  /* ── MAIN ── */
+  #main {
+    margin-left: var(--sidebar-w);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .topbar {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+
+  .topbar-title { font-size: 17px; font-weight: 600; }
+  .topbar-actions { display: flex; align-items: center; gap: 12px; }
+  .topbar-date { font-size: 12px; color: var(--muted); }
+
+  .btn {
+    padding: 7px 16px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all .15s;
+    font-family: inherit;
+  }
+  .btn-primary { background: var(--thread); color: #fff; }
+  .btn-primary:hover { background: #d43050; }
+  .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--ink); }
+  .btn-ghost:hover { background: var(--linen); }
+  .btn-sm { padding: 5px 12px; font-size: 12px; }
+  .btn-success { background: var(--success); color: #fff; }
+  .btn-warn { background: var(--warn); color: #fff; }
+  .btn-danger { background: var(--danger); color: #fff; }
+
+  #content { padding: 28px 32px; flex: 1; }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ── KPI DASHBOARD ── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .kpi-card {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .kpi-card.red::before { background: var(--thread); }
+  .kpi-card.gold::before { background: var(--gold); }
+  .kpi-card.green::before { background: var(--success); }
+  .kpi-card.blue::before { background: #3b82f6; }
+
+  .kpi-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 8px; }
+  .kpi-value { font-size: 28px; font-weight: 700; line-height: 1; }
+  .kpi-sub { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .kpi-delta { display: inline-flex; align-items: center; gap: 3px; font-size: 12px; font-weight: 500; margin-top: 6px; }
+  .kpi-delta.up { color: var(--success); }
+  .kpi-delta.down { color: var(--danger); }
+
+  .charts-row { display: grid; grid-template-columns: 1.6fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .chart-card {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid var(--border);
+  }
+  .chart-title { font-size: 14px; font-weight: 600; margin-bottom: 16px; }
+
+  .bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 140px; }
+  .bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
+  .bar {
+    width: 100%;
+    border-radius: 4px 4px 0 0;
+    transition: opacity .2s;
+    cursor: pointer;
+  }
+  .bar:hover { opacity: .8; }
+  .bar-label { font-size: 10px; color: var(--muted); text-align: center; }
+  .bar-val { font-size: 10px; color: var(--ink); font-weight: 500; }
+
+  .donut-wrap { display: flex; align-items: center; justify-content: center; gap: 20px; }
+  .donut-svg { width: 120px; height: 120px; }
+  .donut-legend { display: flex; flex-direction: column; gap: 8px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ── TABLE ── */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .section-title { font-size: 16px; font-weight: 600; }
+
+  .table-card {
+    background: var(--card);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+
+  .table-toolbar {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .search-input {
+    padding: 7px 12px 7px 32px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 13px;
+    background: var(--cream);
+    outline: none;
+    width: 220px;
+    font-family: inherit;
+  }
+  .search-wrap { position: relative; }
+  .search-wrap::before { content: '🔍'; position: absolute; left: 9px; top: 50%; transform: translateY(-50%); font-size: 12px; }
+
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    padding: 11px 16px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    background: var(--linen);
+    border-bottom: 1px solid var(--border);
+  }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background .1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--linen); }
+  td { padding: 12px 16px; font-size: 13.5px; }
+
+  .badge {
+    display: inline-flex;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .badge-green { background: #d1fae5; color: #065f46; }
+  .badge-red { background: #fee2e2; color: #991b1b; }
+  .badge-yellow { background: #fef3c7; color: #92400e; }
+  .badge-blue { background: #dbeafe; color: #1e40af; }
+  .badge-gray { background: #f3f4f6; color: #374151; }
+
+  .action-btns { display: flex; gap: 6px; }
+
+  /* ── MODAL ── */
+  .modal-backdrop {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.5);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-backdrop.open { display: flex; }
+
+  .modal {
+    background: var(--card);
+    border-radius: 14px;
+    padding: 28px;
+    width: 520px;
+    max-width: 95vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,.2);
+  }
+  .modal-title { font-size: 17px; font-weight: 700; margin-bottom: 20px; }
+  .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-grid.single { grid-template-columns: 1fr; }
+  .form-field { display: flex; flex-direction: column; gap: 5px; }
+  .form-field.full { grid-column: 1 / -1; }
+  label { font-size: 12px; font-weight: 500; color: var(--muted); }
+  input, select, textarea {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 13.5px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color .15s;
+    background: var(--cream);
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--thread); }
+  textarea { resize: vertical; min-height: 80px; }
+
+  /* ── COST CALCULATOR ── */
+  .calc-layout { display: grid; grid-template-columns: 1.2fr 1fr; gap: 20px; }
+  .calc-block {
+    background: var(--card);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    padding: 22px;
+  }
+  .calc-title { font-size: 14px; font-weight: 600; margin-bottom: 16px; }
+  .calc-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed var(--border); }
+  .calc-row:last-child { border-bottom: none; }
+  .calc-label { font-size: 13px; color: var(--muted); }
+  .calc-amount { font-size: 13.5px; font-weight: 600; }
+  .calc-total { display: flex; align-items: center; justify-content: space-between; padding: 14px; background: var(--linen); border-radius: 8px; margin-top: 12px; }
+  .calc-total-label { font-size: 14px; font-weight: 700; }
+  .calc-total-amount { font-size: 20px; font-weight: 700; color: var(--thread); }
+
+  .profit-summary {
+    background: linear-gradient(135deg, var(--seam), var(--fabric));
+    border-radius: 12px;
+    padding: 24px;
+    color: #fff;
+  }
+  .profit-title { font-size: 13px; letter-spacing: .8px; text-transform: uppercase; opacity: .7; margin-bottom: 8px; }
+  .profit-value { font-size: 36px; font-weight: 700; }
+  .profit-margin { font-size: 14px; opacity: .8; margin-top: 4px; }
+
+  .progress-bar-wrap { background: rgba(255,255,255,.1); border-radius: 4px; height: 6px; margin-top: 16px; }
+  .progress-bar-fill { background: var(--gold); border-radius: 4px; height: 100%; transition: width .4s; }
+
+  /* ── SUMMARY ROWS ── */
+  .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+
+  .tag { display: inline-flex; align-items: center; gap: 4px; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 1200px) {
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .charts-row { grid-template-columns: 1fr; }
+    .calc-layout { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside id="sidebar">
+  <div class="sidebar-logo">
+    <div class="brand">ШвейПро</div>
+    <div class="sub">Управление фабрикой</div>
+  </div>
+  <nav>
+    <div class="nav-section">Главная</div>
+    <div class="nav-item active" onclick="showPage('dashboard')">
+      <span class="icon">📊</span> Дашборд KPI
+    </div>
+
+    <div class="nav-section">Производство</div>
+    <div class="nav-item" onclick="showPage('inventory')">
+      <span class="icon">📦</span> Инвентаризация
+    </div>
+    <div class="nav-item" onclick="showPage('assets')">
+      <span class="icon">🏭</span> Активы
+    </div>
+    <div class="nav-item" onclick="showPage('cost')">
+      <span class="icon">🧮</span> Себестоимость
+    </div>
+
+    <div class="nav-section">Персонал и клиенты</div>
+    <div class="nav-item" onclick="showPage('employees')">
+      <span class="icon">👷</span> Сотрудники
+    </div>
+    <div class="nav-item" onclick="showPage('clients')">
+      <span class="icon">🤝</span> Заказчики
+    </div>
+
+    <div class="nav-section">Финансы</div>
+    <div class="nav-item" onclick="showPage('profit')">
+      <span class="icon">💰</span> Чистая прибыль
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    ШвейПро v1.0 · 2025
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div id="main">
+  <div class="topbar">
+    <div class="topbar-title" id="pageTitle">Дашборд KPI</div>
+    <div class="topbar-actions">
+      <span class="topbar-date" id="currentDate"></span>
+      <button class="btn btn-primary btn-sm" onclick="openModal('reportModal')">📄 Отчёт</button>
+    </div>
+  </div>
+
+  <div id="content">
+
+    <!-- ═══════════════════════════ DASHBOARD ═══════════════════════════ -->
+    <div class="page active" id="page-dashboard">
+
+      <div class="kpi-grid">
+        <div class="kpi-card red">
+          <div class="kpi-label">Выпуск продукции</div>
+          <div class="kpi-value" id="kpi-output">2 840</div>
+          <div class="kpi-sub">единиц за месяц</div>
+          <div class="kpi-delta up">▲ 12% к пред. месяцу</div>
+        </div>
+        <div class="kpi-card gold">
+          <div class="kpi-label">Загрузка цеха</div>
+          <div class="kpi-value" id="kpi-load">87%</div>
+          <div class="kpi-sub">из 100% мощности</div>
+          <div class="kpi-delta up">▲ 5% к пред. месяцу</div>
+        </div>
+        <div class="kpi-card green">
+          <div class="kpi-label">Выручка</div>
+          <div class="kpi-value" id="kpi-revenue">₸ 4.2М</div>
+          <div class="kpi-sub">за текущий месяц</div>
+          <div class="kpi-delta up">▲ 8% к пред. месяцу</div>
+        </div>
+        <div class="kpi-card blue">
+          <div class="kpi-label">Брак</div>
+          <div class="kpi-value" id="kpi-defect">2.4%</div>
+          <div class="kpi-sub">от общего выпуска</div>
+          <div class="kpi-delta down">▼ 0.6% — улучшение</div>
+        </div>
+      </div>
+
+      <div class="kpi-grid" style="grid-template-columns: repeat(4,1fr); margin-top:-8px;">
+        <div class="kpi-card green">
+          <div class="kpi-label">Активных заказов</div>
+          <div class="kpi-value">18</div>
+          <div class="kpi-sub">на производстве</div>
+        </div>
+        <div class="kpi-card red">
+          <div class="kpi-label">Сотрудников</div>
+          <div class="kpi-value">42</div>
+          <div class="kpi-sub">в штате</div>
+        </div>
+        <div class="kpi-card gold">
+          <div class="kpi-label">Себестоимость ед.</div>
+          <div class="kpi-value">₸ 820</div>
+          <div class="kpi-sub">средняя по цеху</div>
+        </div>
+        <div class="kpi-card blue">
+          <div class="kpi-label">Рентабельность</div>
+          <div class="kpi-value">34%</div>
+          <div class="kpi-sub">чистая маржа</div>
+        </div>
+      </div>
+
+      <div class="charts-row">
+        <div class="chart-card">
+          <div class="chart-title">📈 Выпуск продукции по месяцам (ед.)</div>
+          <div class="bar-chart" id="outputChart"></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">🧵 Структура себестоимости</div>
+          <div class="donut-wrap">
+            <svg class="donut-svg" viewBox="0 0 120 120">
+              <circle cx="60" cy="60" r="45" fill="none" stroke="#e5e0d8" stroke-width="18"/>
+              <circle cx="60" cy="60" r="45" fill="none" stroke="#e94560" stroke-width="18"
+                stroke-dasharray="113 170" stroke-dashoffset="0" transform="rotate(-90 60 60)"/>
+              <circle cx="60" cy="60" r="45" fill="none" stroke="#c9a84c" stroke-width="18"
+                stroke-dasharray="68 215" stroke-dashoffset="-113" transform="rotate(-90 60 60)"/>
+              <circle cx="60" cy="60" r="45" fill="none" stroke="#3b82f6" stroke-width="18"
+                stroke-dasharray="57 226" stroke-dashoffset="-181" transform="rotate(-90 60 60)"/>
+              <circle cx="60" cy="60" r="45" fill="none" stroke="#10b981" stroke-width="18"
+                stroke-dasharray="45 238" stroke-dashoffset="-238" transform="rotate(-90 60 60)"/>
+              <text x="60" y="65" text-anchor="middle" font-size="13" font-weight="700" fill="#1a1a2e">100%</text>
+            </svg>
+            <div class="donut-legend">
+              <div class="legend-item"><div class="legend-dot" style="background:#e94560"></div>Материалы 40%</div>
+              <div class="legend-item"><div class="legend-dot" style="background:#c9a84c"></div>Зарплата 24%</div>
+              <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>Аренда 20%</div>
+              <div class="legend-item"><div class="legend-dot" style="background:#10b981"></div>Прочее 16%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-title">💹 Финансовая сводка (последние 6 месяцев, ₸ тыс.)</div>
+        <div style="overflow-x:auto; margin-top:8px;">
+          <table>
+            <thead>
+              <tr>
+                <th>Месяц</th>
+                <th>Выручка</th>
+                <th>Себестоимость</th>
+                <th>Валовая прибыль</th>
+                <th>Расходы</th>
+                <th>Чистая прибыль</th>
+                <th>Маржа</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Январь</td><td>3 200</td><td>2 000</td><td>1 200</td><td>750</td><td><b>450</b></td><td><span class="badge badge-green">14%</span></td></tr>
+              <tr><td>Февраль</td><td>3 500</td><td>2 150</td><td>1 350</td><td>780</td><td><b>570</b></td><td><span class="badge badge-green">16%</span></td></tr>
+              <tr><td>Март</td><td>3 800</td><td>2 300</td><td>1 500</td><td>800</td><td><b>700</b></td><td><span class="badge badge-green">18%</span></td></tr>
+              <tr><td>Апрель</td><td>3 600</td><td>2 200</td><td>1 400</td><td>820</td><td><b>580</b></td><td><span class="badge badge-yellow">16%</span></td></tr>
+              <tr><td>Май</td><td>4 000</td><td>2 400</td><td>1 600</td><td>850</td><td><b>750</b></td><td><span class="badge badge-green">19%</span></td></tr>
+              <tr style="background:#fef9f0"><td><b>Июнь</b></td><td><b>4 200</b></td><td><b>2 500</b></td><td><b>1 700</b></td><td><b>870</b></td><td><b style="color:var(--success)">830</b></td><td><span class="badge badge-green">20%</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════ INVENTORY ═══════════════════════════ -->
+    <div class="page" id="page-inventory">
+      <div class="section-header">
+        <div class="section-title">Инвентаризация сырья и материалов</div>
+        <button class="btn btn-primary btn-sm" onclick="openModal('inventoryModal')">+ Добавить</button>
+      </div>
+      <div class="summary-grid">
+        <div class="kpi-card green"><div class="kpi-label">Всего позиций</div><div class="kpi-value" id="inv-count">12</div></div>
+        <div class="kpi-card red"><div class="kpi-label">Заканчивается</div><div class="kpi-value" id="inv-low">3</div></div>
+        <div class="kpi-card gold"><div class="kpi-label">Стоимость склада</div><div class="kpi-value" id="inv-value">₸ 1.8М</div></div>
+      </div>
+      <div class="table-card">
+        <div class="table-toolbar">
+          <div class="search-wrap"><input class="search-input" placeholder="Поиск материала..." oninput="filterTable('invTable', this.value)"></div>
+          <div style="display:flex;gap:8px;">
+            <select class="search-input" style="width:auto" onchange="filterByStatus('invTable', this.value, 5)">
+              <option value="">Все статусы</option>
+              <option value="В наличии">В наличии</option>
+              <option value="Заканчивается">Заканчивается</option>
+              <option value="Нет в наличии">Нет в наличии</option>
+            </select>
+          </div>
+        </div>
+        <table id="invTable">
+          <thead>
+            <tr>
+              <th>#</th><th>Наименование</th><th>Категория</th><th>Ед. изм.</th>
+              <th>Кол-во</th><th>Цена ед.</th><th>Сумма</th><th>Статус</th><th>Действия</th>
+            </tr>
+          </thead>
+          <tbody id="invBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════ ASSETS ═══════════════════════════ -->
+    <div class="page" id="page-assets">
+      <div class="section-header">
+        <div class="section-title">Основные активы и оборудование</div>
+        <button class="btn btn-primary btn-sm" onclick="openModal('assetModal')">+ Добавить</button>
+      </div>
+      <div class="summary-grid">
+        <div class="kpi-card blue"><div class="kpi-label">Всего активов</div><div class="kpi-value" id="ast-count">8</div></div>
+        <div class="kpi-card green"><div class="kpi-label">Работают</div><div class="kpi-value" id="ast-ok">6</div></div>
+        <div class="kpi-card red"><div class="kpi-label">На ремонте</div><div class="kpi-value" id="ast-repair">2</div></div>
+      </div>
+      <div class="table-card">
+        <div class="table-toolbar">
+          <div class="search-wrap"><input class="search-input" placeholder="Поиск актива..." oninput="filterTable('astTable', this.value)"></div>
+        </div>
+        <table id="astTable">
+          <thead>
+            <tr>
+              <th>#</th><th>Наименование</th><th>Тип</th><th>Год приобр.</th>
+              <th>Стоимость</th><th>Остат. стоимость</th><th>Статус</th><th>Действия</th>
+            </tr>
+          </thead>
+          <tbody id="astBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════ COST CALCULATOR ═══════════════════════════ -->
+    <div class="page" id="page-cost">
+      <div class="section-header">
+        <div class="section-title">Расчёт себестоимости продукции</div>
+        <button class="btn btn-primary btn-sm" onclick="calcCost()">🔄 Пересчитать</button>
+      </div>
+      <div class="calc-layout">
+        <div class="calc-block">
+          <div class="calc-title">⚙️ Параметры расчёта</div>
+          <div class="form-grid">
+            <div class="form-field">
+              <label>Тип изделия</label>
+              <select id="c-product">
+                <option>Рубашка</option><option>Брюки</option><option>Платье</option>
+                <option>Куртка</option><option>Пальто</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label>Количество (ед.)</label>
+              <input type="number" id="c-qty" value="100" min="1" oninput="calcCost()">
+            </div>
+            <div class="form-field">
+              <label>Ткань (₸/м)</label>
+              <input type="number" id="c-fabric" value="1200" oninput="calcCost()">
+            </div>
+            <div class="form-field">
+              <label>Расход ткани (м/ед.)</label>
+              <input type="number" id="c-fabQty" value="2.5" step="0.1" oninput="calcCost()">
+            </div>
+            <div class="form-field">
+              <label>Фурнитура (₸/ед.)</label>
+              <input type="number" id="c-acc" value="150" oninput="calcCost()">
+            </div>
+            <div class="form-field">
+              <label>Нить/упаковка (₸/ед.)</label>
+              <input type="number" id="c-pack" value="50" oninput="calcCost()">
+            </div>
+            <div class="form-field">
+              <label>Зарплата швей (₸/ед.)</label>
+              <input type="number" id="c-wage" value="300" oninput="calcCost()">
+            </div>
+            <div class="form-field">
+              <label>Аренда цеха (₸/мес.)</label>
+              <input type="number" id="c-rent" value="500000" oninput="calcCost()">
+            </div>
+            <div class="form-field">
+              <label>Амортизация (₸/мес.)</label>
+              <input type="number" id="c-amort" value="80000" oninput="calcCost()">
+            </div>
+            <div class="form-field">
+              <label>Прочие расходы (₸/мес.)</label>
+              <input type="number" id="c-other" value="120000" oninput="calcCost()">
+            </div>
+            <div class="form-field">
+              <label>Цена продажи (₸/ед.)</label>
+              <input type="number" id="c-price" value="2500" oninput="calcCost()">
+            </div>
+            <div class="form-field">
+              <label>НДС (%)</label>
+              <input type="number" id="c-vat" value="12" oninput="calcCost()">
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="calc-block" style="margin-bottom:16px;">
+            <div class="calc-title">📋 Структура себестоимости (на ед.)</div>
+            <div class="calc-row"><span class="calc-label">Материалы (ткань)</span><span class="calc-amount" id="r-fabric">—</span></div>
+            <div class="calc-row"><span class="calc-label">Фурнитура</span><span class="calc-amount" id="r-acc">—</span></div>
+            <div class="calc-row"><span class="calc-label">Нить/упаковка</span><span class="calc-amount" id="r-pack">—</span></div>
+            <div class="calc-row"><span class="calc-label">Прямая зарплата</span><span class="calc-amount" id="r-wage">—</span></div>
+            <div class="calc-row"><span class="calc-label">Доля аренды</span><span class="calc-amount" id="r-rent">—</span></div>
+            <div class="calc-row"><span class="calc-label">Доля амортизации</span><span class="calc-amount" id="r-amort">—</span></div>
+            <div class="calc-row"><span class="calc-label">Прочие (доля)</span><span class="calc-amount" id="r-other">—</span></div>
+            <div class="calc-total">
+              <span class="calc-total-label">Себестоимость / ед.</span>
+              <span class="calc-total-amount" id="r-unit">—</span>
+            </div>
+          </div>
+
+          <div class="profit-summary">
+            <div class="profit-title">Чистая прибыль (партия)</div>
+            <div class="profit-value" id="r-net">—</div>
+            <div class="profit-margin" id="r-margin">Маржа: —</div>
+            <div class="progress-bar-wrap"><div class="progress-bar-fill" id="r-bar" style="width:0%"></div></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px;font-size:12px;opacity:.8">
+              <div>Выручка: <b id="r-rev">—</b></div>
+              <div>Полн. себест.: <b id="r-totalcost">—</b></div>
+              <div>Валовая прибыль: <b id="r-gross">—</b></div>
+              <div>НДС к уплате: <b id="r-vatamt">—</b></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════ EMPLOYEES ═══════════════════════════ -->
+    <div class="page" id="page-employees">
+      <div class="section-header">
+        <div class="section-title">Сотрудники</div>
+        <button class="btn btn-primary btn-sm" onclick="openModal('empModal')">+ Добавить</button>
+      </div>
+      <div class="summary-grid">
+        <div class="kpi-card blue"><div class="kpi-label">Всего сотрудников</div><div class="kpi-value" id="emp-count">0</div></div>
+        <div class="kpi-card green"><div class="kpi-label">Активных</div><div class="kpi-value" id="emp-active">0</div></div>
+        <div class="kpi-card gold"><div class="kpi-label">ФОТ (мес.)</div><div class="kpi-value" id="emp-fot">₸ 0</div></div>
+      </div>
+      <div class="table-card">
+        <div class="table-toolbar">
+          <div class="search-wrap"><input class="search-input" placeholder="Поиск сотрудника..." oninput="filterTable('empTable', this.value)"></div>
+        </div>
+        <table id="empTable">
+          <thead>
+            <tr>
+              <th>#</th><th>ФИО</th><th>Должность</th><th>Отдел</th>
+              <th>Оклад (₸)</th><th>Дата найма</th><th>Статус</th><th>Действия</th>
+            </tr>
+          </thead>
+          <tbody id="empBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════ CLIENTS ═══════════════════════════ -->
+    <div class="page" id="page-clients">
+      <div class="section-header">
+        <div class="section-title">Заказчики</div>
+        <button class="btn btn-primary btn-sm" onclick="openModal('clientModal')">+ Добавить</button>
+      </div>
+      <div class="summary-grid">
+        <div class="kpi-card blue"><div class="kpi-label">Всего клиентов</div><div class="kpi-value" id="cli-count">0</div></div>
+        <div class="kpi-card green"><div class="kpi-label">Активных заказов</div><div class="kpi-value" id="cli-orders">0</div></div>
+        <div class="kpi-card gold"><div class="kpi-label">Общая сумма</div><div class="kpi-value" id="cli-total">₸ 0</div></div>
+      </div>
+      <div class="table-card">
+        <div class="table-toolbar">
+          <div class="search-wrap"><input class="search-input" placeholder="Поиск клиента..." oninput="filterTable('cliTable', this.value)"></div>
+        </div>
+        <table id="cliTable">
+          <thead>
+            <tr>
+              <th>#</th><th>Компания / ФИО</th><th>Контакт</th><th>Телефон</th>
+              <th>Заказов</th><th>Сумма</th><th>Статус</th><th>Действия</th>
+            </tr>
+          </thead>
+          <tbody id="cliBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════ PROFIT ═══════════════════════════ -->
+    <div class="page" id="page-profit">
+      <div class="section-header">
+        <div class="section-title">Финансовый отчёт / Чистая прибыль</div>
+        <button class="btn btn-primary btn-sm" onclick="calcProfit()">🔄 Пересчитать</button>
+      </div>
+      <div class="calc-layout">
+        <div class="calc-block">
+          <div class="calc-title">📥 Доходы и расходы (месяц)</div>
+          <div class="form-grid">
+            <div class="form-field"><label>Выручка от продаж (₸)</label><input type="number" id="p-rev" value="4200000" oninput="calcProfit()"></div>
+            <div class="form-field"><label>Прочие доходы (₸)</label><input type="number" id="p-otherinc" value="50000" oninput="calcProfit()"></div>
+            <div class="form-field"><label>Себестоимость продукции (₸)</label><input type="number" id="p-cogs" value="2500000" oninput="calcProfit()"></div>
+            <div class="form-field"><label>Аренда и коммун. (₸)</label><input type="number" id="p-rent" value="500000" oninput="calcProfit()"></div>
+            <div class="form-field"><label>ФОТ с налогами (₸)</label><input type="number" id="p-fot" value="1200000" oninput="calcProfit()"></div>
+            <div class="form-field"><label>Амортизация (₸)</label><input type="number" id="p-amort" value="80000" oninput="calcProfit()"></div>
+            <div class="form-field"><label>Маркетинг и реклама (₸)</label><input type="number" id="p-mkt" value="80000" oninput="calcProfit()"></div>
+            <div class="form-field"><label>Административные расх. (₸)</label><input type="number" id="p-admin" value="120000" oninput="calcProfit()"></div>
+            <div class="form-field"><label>Кредит / % банку (₸)</label><input type="number" id="p-loan" value="100000" oninput="calcProfit()"></div>
+            <div class="form-field"><label>КПН / налоги (₸)</label><input type="number" id="p-tax" value="150000" oninput="calcProfit()"></div>
+          </div>
+        </div>
+
+        <div>
+          <div class="calc-block" style="margin-bottom:16px;">
+            <div class="calc-title">📊 P&L Отчёт</div>
+            <div class="calc-row"><span class="calc-label">Выручка от продаж</span><span class="calc-amount" id="pr-rev" style="color:var(--success)">—</span></div>
+            <div class="calc-row"><span class="calc-label">Прочие доходы</span><span class="calc-amount" id="pr-otherinc" style="color:var(--success)">—</span></div>
+            <div class="calc-row"><span class="calc-label" style="font-weight:600">Итого доходы</span><span class="calc-amount" id="pr-totalinc" style="color:var(--success);font-weight:700">—</span></div>
+            <div style="height:8px"></div>
+            <div class="calc-row"><span class="calc-label">Себестоимость продукции</span><span class="calc-amount" id="pr-cogs" style="color:var(--danger)">—</span></div>
+            <div class="calc-row"><span class="calc-label">Валовая прибыль</span><span class="calc-amount" id="pr-gross" style="font-weight:700">—</span></div>
+            <div style="height:8px"></div>
+            <div class="calc-row"><span class="calc-label">Аренда и коммун.</span><span class="calc-amount" id="pr-rent" style="color:var(--danger)">—</span></div>
+            <div class="calc-row"><span class="calc-label">ФОТ с налогами</span><span class="calc-amount" id="pr-fot" style="color:var(--danger)">—</span></div>
+            <div class="calc-row"><span class="calc-label">Амортизация</span><span class="calc-amount" id="pr-amort" style="color:var(--danger)">—</span></div>
+            <div class="calc-row"><span class="calc-label">Маркетинг</span><span class="calc-amount" id="pr-mkt" style="color:var(--danger)">—</span></div>
+            <div class="calc-row"><span class="calc-label">Административные</span><span class="calc-amount" id="pr-admin" style="color:var(--danger)">—</span></div>
+            <div class="calc-row"><span class="calc-label">EBIT (операц. прибыль)</span><span class="calc-amount" id="pr-ebit" style="font-weight:700">—</span></div>
+            <div class="calc-row"><span class="calc-label">% банку / кредит</span><span class="calc-amount" id="pr-loan" style="color:var(--danger)">—</span></div>
+            <div class="calc-row"><span class="calc-label">EBT (до налогов)</span><span class="calc-amount" id="pr-ebt" style="font-weight:700">—</span></div>
+            <div class="calc-row"><span class="calc-label">Налоги (КПН)</span><span class="calc-amount" id="pr-tax" style="color:var(--danger)">—</span></div>
+            <div class="calc-total">
+              <span class="calc-total-label">ЧИСТАЯ ПРИБЫЛЬ</span>
+              <span class="calc-total-amount" id="pr-net">—</span>
+            </div>
+          </div>
+
+          <div class="profit-summary">
+            <div class="profit-title">Рентабельность продаж</div>
+            <div class="profit-value" id="pr-margin">—%</div>
+            <div class="profit-margin">Чистая прибыль / Выручка × 100</div>
+            <div class="progress-bar-wrap"><div class="progress-bar-fill" id="pr-bar" style="width:0%"></div></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px;font-size:12px;opacity:.8">
+              <div>EBITDA: <b id="pr-ebitda">—</b></div>
+              <div>ROE: <b id="pr-roe">—</b></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- ═══ MODALS ═══ -->
+
+<!-- REPORT MODAL -->
+<div class="modal-backdrop" id="reportModal">
+  <div class="modal">
+    <div class="modal-title">📄 Формирование отчёта</div>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:16px">Выберите тип отчёта для загрузки</p>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button class="btn btn-ghost" onclick="alert('Отчёт KPI сформирован!')">📊 KPI дашборд</button>
+      <button class="btn btn-ghost" onclick="alert('Отчёт по инвентарю сформирован!')">📦 Инвентаризация</button>
+      <button class="btn btn-ghost" onclick="alert('Финансовый отчёт сформирован!')">💰 P&L отчёт</button>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('reportModal')">Закрыть</button></div>
+  </div>
+</div>
+
+<!-- INVENTORY MODAL -->
+<div class="modal-backdrop" id="inventoryModal">
+  <div class="modal">
+    <div class="modal-title">+ Добавить материал</div>
+    <div class="form-grid">
+      <div class="form-field full"><label>Наименование</label><input id="im-name" placeholder="Ткань хлопок 100%"></div>
+      <div class="form-field"><label>Категория</label>
+        <select id="im-cat"><option>Ткань</option><option>Фурнитура</option><option>Нить</option><option>Упаковка</option><option>Прочее</option></select>
+      </div>
+      <div class="form-field"><label>Ед. измерения</label>
+        <select id="im-unit"><option>м</option><option>кг</option><option>шт</option><option>рул</option></select>
+      </div>
+      <div class="form-field"><label>Количество</label><input type="number" id="im-qty" placeholder="500"></div>
+      <div class="form-field"><label>Цена за ед. (₸)</label><input type="number" id="im-price" placeholder="1200"></div>
+      <div class="form-field"><label>Мин. остаток</label><input type="number" id="im-min" placeholder="50"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('inventoryModal')">Отмена</button>
+      <button class="btn btn-primary" onclick="addInventory()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- ASSET MODAL -->
+<div class="modal-backdrop" id="assetModal">
+  <div class="modal">
+    <div class="modal-title">+ Добавить актив</div>
+    <div class="form-grid">
+      <div class="form-field full"><label>Наименование</label><input id="am-name" placeholder="Промышленная швейная машина"></div>
+      <div class="form-field"><label>Тип</label>
+        <select id="am-type"><option>Оборудование</option><option>Транспорт</option><option>Мебель</option><option>Здание</option><option>Прочее</option></select>
+      </div>
+      <div class="form-field"><label>Год приобретения</label><input type="number" id="am-year" placeholder="2022"></div>
+      <div class="form-field"><label>Первонач. стоимость (₸)</label><input type="number" id="am-cost" placeholder="850000"></div>
+      <div class="form-field"><label>Остаточная стоимость (₸)</label><input type="number" id="am-residual" placeholder="600000"></div>
+      <div class="form-field"><label>Статус</label>
+        <select id="am-status"><option>Работает</option><option>На ремонте</option><option>Списан</option></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('assetModal')">Отмена</button>
+      <button class="btn btn-primary" onclick="addAsset()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- EMPLOYEE MODAL -->
+<div class="modal-backdrop" id="empModal">
+  <div class="modal">
+    <div class="modal-title">+ Добавить сотрудника</div>
+    <div class="form-grid">
+      <div class="form-field full"><label>ФИО</label><input id="em-name" placeholder="Алматова Гульнара Сейтқалиевна"></div>
+      <div class="form-field"><label>Должность</label>
+        <select id="em-pos"><option>Швея</option><option>Закройщик</option><option>Технолог</option><option>Мастер цеха</option><option>Бухгалтер</option><option>Кладовщик</option><option>Директор</option></select>
+      </div>
+      <div class="form-field"><label>Отдел</label>
+        <select id="em-dept"><option>Цех</option><option>Склад</option><option>Бухгалтерия</option><option>Управление</option></select>
+      </div>
+      <div class="form-field"><label>Оклад (₸)</label><input type="number" id="em-salary" placeholder="180000"></div>
+      <div class="form-field"><label>Дата найма</label><input type="date" id="em-date"></div>
+      <div class="form-field"><label>Статус</label>
+        <select id="em-status"><option>Активен</option><option>Отпуск</option><option>Уволен</option></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('empModal')">Отмена</button>
+      <button class="btn btn-primary" onclick="addEmployee()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- CLIENT MODAL -->
+<div class="modal-backdrop" id="clientModal">
+  <div class="modal">
+    <div class="modal-title">+ Добавить заказчика</div>
+    <div class="form-grid">
+      <div class="form-field full"><label>Компания / ФИО</label><input id="cl-name" placeholder="ТОО «Модный Дом»"></div>
+      <div class="form-field"><label>Контактное лицо</label><input id="cl-contact" placeholder="Иванов Иван"></div>
+      <div class="form-field"><label>Телефон</label><input id="cl-phone" placeholder="+7 700 123 45 67"></div>
+      <div class="form-field"><label>Email</label><input id="cl-email" placeholder="info@example.kz"></div>
+      <div class="form-field"><label>Кол-во заказов</label><input type="number" id="cl-orders" placeholder="5" value="1"></div>
+      <div class="form-field"><label>Общая сумма (₸)</label><input type="number" id="cl-total" placeholder="500000"></div>
+      <div class="form-field"><label>Статус</label>
+        <select id="cl-status"><option>Активный</option><option>Разовый</option><option>Приостановлен</option></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('clientModal')">Отмена</button>
+      <button class="btn btn-primary" onclick="addClient()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── NAVIGATION ──
+const pageTitles = {
+  dashboard: 'Дашборд KPI',
+  inventory: 'Инвентаризация',
+  assets: 'Активы и оборудование',
+  cost: 'Расчёт себестоимости',
+  employees: 'Сотрудники',
+  clients: 'Заказчики',
+  profit: 'Финансовый отчёт / Чистая прибыль'
+};
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.querySelector(`.nav-item[onclick="showPage('${id}')"]`).classList.add('active');
+  document.getElementById('pageTitle').textContent = pageTitles[id];
+  if (id === 'cost') calcCost();
+  if (id === 'profit') calcProfit();
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-backdrop').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+
+// ── DATE ──
+document.getElementById('currentDate').textContent =
+  new Date().toLocaleDateString('ru-RU', { day:'numeric', month:'long', year:'numeric' });
+
+// ── BAR CHART ──
+const months = ['Янв','Фев','Мар','Апр','Май','Июн'];
+const values = [2100, 2350, 2600, 2450, 2700, 2840];
+const maxV = Math.max(...values);
+const chart = document.getElementById('outputChart');
+months.forEach((m, i) => {
+  const h = Math.round((values[i] / maxV) * 110);
+  chart.innerHTML += `
+    <div class="bar-wrap">
+      <div class="bar-val">${values[i]}</div>
+      <div class="bar" style="height:${h}px;background:${i===5?'var(--thread)':'var(--seam)'}"></div>
+      <div class="bar-label">${m}</div>
+    </div>`;
+});
+
+// ── FORMAT ──
+const fmt = n => '₸ ' + Math.round(n).toLocaleString('ru-RU');
+
+// ── INVENTORY DATA ──
+let inventory = [
+  {name:'Ткань хлопок 100%',cat:'Ткань',unit:'м',qty:850,price:1200,min:100},
+  {name:'Ткань джинс',cat:'Ткань',unit:'м',qty:420,price:1800,min:80},
+  {name:'Ткань плащёвая',cat:'Ткань',unit:'м',qty:60,price:2200,min:80},
+  {name:'Нить полиэстер',cat:'Нить',unit:'кат',qty:320,price:150,min:50},
+  {name:'Пуговицы',cat:'Фурнитура',unit:'шт',qty:4500,price:15,min:500},
+  {name:'Молния металл',cat:'Фурнитура',unit:'шт',qty:280,price:120,min:100},
+  {name:'Молния пластик',cat:'Фурнитура',unit:'шт',qty:40,price:80,min:100},
+  {name:'Подкладочная ткань',cat:'Ткань',unit:'м',qty:200,price:900,min:50},
+  {name:'Этикетки',cat:'Упаковка',unit:'шт',qty:2000,price:20,min:500},
+  {name:'Полиэтиленовые пакеты',cat:'Упаковка',unit:'шт',qty:0,price:30,min:200},
+  {name:'Клеевой дублерин',cat:'Прочее',unit:'м',qty:180,price:500,min:50},
+  {name:'Лента отделочная',cat:'Фурнитура',unit:'м',qty:650,price:80,min:100},
+];
+
+function getInvStatus(item) {
+  if (item.qty === 0) return {text:'Нет в наличии', cls:'badge-red'};
+  if (item.qty <= item.min) return {text:'Заканчивается', cls:'badge-yellow'};
+  return {text:'В наличии', cls:'badge-green'};
+}
+
+function renderInventory() {
+  const tbody = document.getElementById('invBody');
+  tbody.innerHTML = inventory.map((it, i) => {
+    const st = getInvStatus(it);
+    const total = it.qty * it.price;
+    return `<tr>
+      <td>${i+1}</td>
+      <td><b>${it.name}</b></td>
+      <td>${it.cat}</td>
+      <td>${it.unit}</td>
+      <td>${it.qty.toLocaleString('ru-RU')}</td>
+      <td>${it.price.toLocaleString('ru-RU')} ₸</td>
+      <td>${total.toLocaleString('ru-RU')} ₸</td>
+      <td><span class="badge ${st.cls}">${st.text}</span></td>
+      <td><div class="action-btns">
+        <button class="btn btn-ghost btn-sm" onclick="editInv(${i})">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="delInv(${i})">🗑</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('inv-count').textContent = inventory.length;
+  document.getElementById('inv-low').textContent = inventory.filter(x => x.qty <= x.min).length;
+  const total = inventory.reduce((s, x) => s + x.qty * x.price, 0);
+  document.getElementById('inv-value').textContent = fmt(total);
+}
+
+function addInventory() {
+  const name = document.getElementById('im-name').value.trim();
+  if (!name) { alert('Введите наименование'); return; }
+  inventory.push({
+    name,
+    cat: document.getElementById('im-cat').value,
+    unit: document.getElementById('im-unit').value,
+    qty: +document.getElementById('im-qty').value || 0,
+    price: +document.getElementById('im-price').value || 0,
+    min: +document.getElementById('im-min').value || 0
+  });
+  closeModal('inventoryModal');
+  ['im-name','im-qty','im-price','im-min'].forEach(id => document.getElementById(id).value = '');
+  renderInventory();
+}
+
+function delInv(i) { if (confirm('Удалить?')) { inventory.splice(i, 1); renderInventory(); } }
+function editInv(i) { alert('Редактирование: ' + inventory[i].name); }
+
+// ── ASSETS ──
+let assets = [
+  {name:'Швейная машина JUKI DDL-8700',type:'Оборудование',year:2021,cost:850000,residual:620000,status:'Работает'},
+  {name:'Швейная машина JUKI DDL-8700',type:'Оборудование',year:2021,cost:850000,residual:620000,status:'Работает'},
+  {name:'Оверлок Brother MA4-B551',type:'Оборудование',year:2022,cost:620000,residual:500000,status:'Работает'},
+  {name:'Раскройный стол 3м',type:'Мебель',year:2020,cost:180000,residual:90000,status:'Работает'},
+  {name:'Утюжильный стол',type:'Оборудование',year:2021,cost:250000,residual:175000,status:'На ремонте'},
+  {name:'Пресс промышленный',type:'Оборудование',year:2019,cost:1200000,residual:600000,status:'На ремонте'},
+  {name:'Грузовой автомобиль ГАЗель',type:'Транспорт',year:2018,cost:3500000,residual:1800000,status:'Работает'},
+  {name:'Вышивальная машина Brother',type:'Оборудование',year:2023,cost:2200000,residual:2000000,status:'Работает'},
+];
+
+function renderAssets() {
+  const tbody = document.getElementById('astBody');
+  tbody.innerHTML = assets.map((a, i) => {
+    const cls = a.status === 'Работает' ? 'badge-green' : a.status === 'На ремонте' ? 'badge-yellow' : 'badge-red';
+    return `<tr>
+      <td>${i+1}</td>
+      <td><b>${a.name}</b></td>
+      <td>${a.type}</td>
+      <td>${a.year}</td>
+      <td>${a.cost.toLocaleString('ru-RU')} ₸</td>
+      <td>${a.residual.toLocaleString('ru-RU')} ₸</td>
+      <td><span class="badge ${cls}">${a.status}</span></td>
+      <td><div class="action-btns">
+        <button class="btn btn-ghost btn-sm" onclick="editAst(${i})">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="delAst(${i})">🗑</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('ast-count').textContent = assets.length;
+  document.getElementById('ast-ok').textContent = assets.filter(x=>x.status==='Работает').length;
+  document.getElementById('ast-repair').textContent = assets.filter(x=>x.status==='На ремонте').length;
+}
+
+function addAsset() {
+  const name = document.getElementById('am-name').value.trim();
+  if (!name) { alert('Введите наименование'); return; }
+  assets.push({
+    name,
+    type: document.getElementById('am-type').value,
+    year: +document.getElementById('am-year').value || 2024,
+    cost: +document.getElementById('am-cost').value || 0,
+    residual: +document.getElementById('am-residual').value || 0,
+    status: document.getElementById('am-status').value
+  });
+  closeModal('assetModal');
+  renderAssets();
+}
+function delAst(i) { if (confirm('Удалить?')) { assets.splice(i, 1); renderAssets(); } }
+function editAst(i) { alert('Редактирование: ' + assets[i].name); }
+
+// ── EMPLOYEES ──
+let employees = [
+  {name:'Алматова Гульнара С.',pos:'Мастер цеха',dept:'Цех',salary:320000,date:'2019-03-15',status:'Активен'},
+  {name:'Сейтжанов Нурлан А.',pos:'Технолог',dept:'Цех',salary:280000,date:'2020-06-01',status:'Активен'},
+  {name:'Бекова Айгуль М.',pos:'Швея',dept:'Цех',salary:180000,date:'2021-01-10',status:'Активен'},
+  {name:'Жумаева Дина Р.',pos:'Швея',dept:'Цех',salary:180000,date:'2021-01-10',status:'Активен'},
+  {name:'Касымова Жанар Т.',pos:'Швея',dept:'Цех',salary:175000,date:'2022-04-01',status:'Активен'},
+  {name:'Нурланова Ботагоз',pos:'Закройщик',dept:'Цех',salary:220000,date:'2020-11-15',status:'Активен'},
+  {name:'Аширов Ерлан К.',pos:'Кладовщик',dept:'Склад',salary:160000,date:'2021-08-01',status:'Активен'},
+  {name:'Темирова Самал Б.',pos:'Бухгалтер',dept:'Бухгалтерия',salary:250000,date:'2019-07-01',status:'Активен'},
+  {name:'Досов Бауыржан',pos:'Водитель',dept:'Управление',salary:145000,date:'2023-02-01',status:'Отпуск'},
+];
+
+function renderEmployees() {
+  const tbody = document.getElementById('empBody');
+  tbody.innerHTML = employees.map((e, i) => {
+    const cls = e.status==='Активен'?'badge-green':e.status==='Отпуск'?'badge-yellow':'badge-red';
+    return `<tr>
+      <td>${i+1}</td>
+      <td><b>${e.name}</b></td>
+      <td>${e.pos}</td>
+      <td>${e.dept}</td>
+      <td>${e.salary.toLocaleString('ru-RU')} ₸</td>
+      <td>${e.date}</td>
+      <td><span class="badge ${cls}">${e.status}</span></td>
+      <td><div class="action-btns">
+        <button class="btn btn-ghost btn-sm" onclick="editEmp(${i})">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="delEmp(${i})">🗑</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('emp-count').textContent = employees.length;
+  document.getElementById('emp-active').textContent = employees.filter(x=>x.status==='Активен').length;
+  const fot = employees.filter(x=>x.status==='Активен').reduce((s,x)=>s+x.salary,0);
+  document.getElementById('emp-fot').textContent = fmt(fot);
+}
+
+function addEmployee() {
+  const name = document.getElementById('em-name').value.trim();
+  if (!name) { alert('Введите ФИО'); return; }
+  employees.push({
+    name,
+    pos: document.getElementById('em-pos').value,
+    dept: document.getElementById('em-dept').value,
+    salary: +document.getElementById('em-salary').value || 0,
+    date: document.getElementById('em-date').value || '2025-01-01',
+    status: document.getElementById('em-status').value
+  });
+  closeModal('empModal');
+  renderEmployees();
+}
+function delEmp(i) { if (confirm('Удалить?')) { employees.splice(i, 1); renderEmployees(); } }
+function editEmp(i) { alert('Редактирование: ' + employees[i].name); }
+
+// ── CLIENTS ──
+let clients = [
+  {name:'ТОО «Модный Дом»',contact:'Смаилов А.',phone:'+7 701 234 56 78',orders:12,total:4800000,status:'Активный'},
+  {name:'ИП Жакупова',contact:'Жакупова Б.',phone:'+7 705 987 65 43',orders:5,total:1200000,status:'Активный'},
+  {name:'ТОО «КазТекстиль»',contact:'Нуров Д.',phone:'+7 707 111 22 33',orders:8,total:3200000,status:'Активный'},
+  {name:'Универмаг «Меркур»',contact:'Петрова И.',phone:'+7 702 555 44 33',orders:3,total:900000,status:'Разовый'},
+  {name:'ТОО «СтильПлюс»',contact:'Аленов С.',phone:'+7 700 777 88 99',orders:0,total:0,status:'Приостановлен'},
+];
+
+function renderClients() {
+  const tbody = document.getElementById('cliBody');
+  tbody.innerHTML = clients.map((c, i) => {
+    const cls = c.status==='Активный'?'badge-green':c.status==='Разовый'?'badge-blue':'badge-gray';
+    return `<tr>
+      <td>${i+1}</td>
+      <td><b>${c.name}</b></td>
+      <td>${c.contact}</td>
+      <td>${c.phone}</td>
+      <td>${c.orders}</td>
+      <td>${c.total.toLocaleString('ru-RU')} ₸</td>
+      <td><span class="badge ${cls}">${c.status}</span></td>
+      <td><div class="action-btns">
+        <button class="btn btn-ghost btn-sm" onclick="editCli(${i})">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="delCli(${i})">🗑</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('cli-count').textContent = clients.length;
+  document.getElementById('cli-orders').textContent = clients.filter(x=>x.status==='Активный').reduce((s,x)=>s+x.orders,0);
+  const total = clients.reduce((s,x)=>s+x.total,0);
+  document.getElementById('cli-total').textContent = fmt(total);
+}
+
+function addClient() {
+  const name = document.getElementById('cl-name').value.trim();
+  if (!name) { alert('Введите название'); return; }
+  clients.push({
+    name,
+    contact: document.getElementById('cl-contact').value,
+    phone: document.getElementById('cl-phone').value,
+    orders: +document.getElementById('cl-orders').value || 0,
+    total: +document.getElementById('cl-total').value || 0,
+    status: document.getElementById('cl-status').value
+  });
+  closeModal('clientModal');
+  renderClients();
+}
+function delCli(i) { if (confirm('Удалить?')) { clients.splice(i, 1); renderClients(); } }
+function editCli(i) { alert('Редактирование: ' + clients[i].name); }
+
+// ── COST CALCULATOR ──
+function v(id) { return parseFloat(document.getElementById(id).value) || 0; }
+function set(id, val) { const el = document.getElementById(id); if(el) el.textContent = val; }
+
+function calcCost() {
+  const qty = v('c-qty') || 1;
+  const fabTotal = v('c-fabric') * v('c-fabQty');
+  const acc = v('c-acc');
+  const pack = v('c-pack');
+  const wage = v('c-wage');
+  const rentPU = v('c-rent') / qty;
+  const amortPU = v('c-amort') / qty;
+  const otherPU = v('c-other') / qty;
+  const unit = fabTotal + acc + pack + wage + rentPU + amortPU + otherPU;
+  const totalCost = unit * qty;
+  const price = v('c-price');
+  const revenue = price * qty;
+  const vatRate = v('c-vat') / 100;
+  const vatAmt = revenue * vatRate;
+  const gross = revenue - totalCost;
+  const net = gross - vatAmt;
+  const margin = revenue > 0 ? (net / revenue * 100) : 0;
+
+  set('r-fabric', fabTotal.toFixed(0) + ' ₸');
+  set('r-acc', acc.toFixed(0) + ' ₸');
+  set('r-pack', pack.toFixed(0) + ' ₸');
+  set('r-wage', wage.toFixed(0) + ' ₸');
+  set('r-rent', rentPU.toFixed(0) + ' ₸');
+  set('r-amort', amortPU.toFixed(0) + ' ₸');
+  set('r-other', otherPU.toFixed(0) + ' ₸');
+  set('r-unit', unit.toFixed(0) + ' ₸');
+  set('r-rev', fmt(revenue));
+  set('r-totalcost', fmt(totalCost));
+  set('r-gross', fmt(gross));
+  set('r-vatamt', fmt(vatAmt));
+  set('r-net', fmt(net));
+  set('r-margin', 'Маржа: ' + margin.toFixed(1) + '%');
+  const barWidth = Math.max(0, Math.min(100, margin * 2));
+  document.getElementById('r-bar').style.width = barWidth + '%';
+}
+
+// ── PROFIT CALC ──
+function calcProfit() {
+  const rev = v('p-rev');
+  const otherInc = v('p-otherinc');
+  const totalInc = rev + otherInc;
+  const cogs = v('p-cogs');
+  const gross = totalInc - cogs;
+  const rent = v('p-rent');
+  const fot = v('p-fot');
+  const amort = v('p-amort');
+  const mkt = v('p-mkt');
+  const admin = v('p-admin');
+  const ebit = gross - rent - fot - amort - mkt - admin;
+  const loan = v('p-loan');
+  const ebt = ebit - loan;
+  const tax = v('p-tax');
+  const net = ebt - tax;
+  const margin = rev > 0 ? (net / rev * 100) : 0;
+  const ebitda = ebit + amort;
+
+  set('pr-rev', fmt(rev));
+  set('pr-otherinc', fmt(otherInc));
+  set('pr-totalinc', fmt(totalInc));
+  set('pr-cogs', '− ' + fmt(cogs));
+  set('pr-gross', fmt(gross));
+  set('pr-rent', '− ' + fmt(rent));
+  set('pr-fot', '− ' + fmt(fot));
+  set('pr-amort', '− ' + fmt(amort));
+  set('pr-mkt', '− ' + fmt(mkt));
+  set('pr-admin', '− ' + fmt(admin));
+  set('pr-ebit', fmt(ebit));
+  set('pr-loan', '− ' + fmt(loan));
+  set('pr-ebt', fmt(ebt));
+  set('pr-tax', '− ' + fmt(tax));
+
+  const netEl = document.getElementById('pr-net');
+  netEl.textContent = fmt(net);
+  netEl.style.color = net >= 0 ? '#4ade80' : '#f87171';
+
+  set('pr-margin', margin.toFixed(1) + '%');
+  set('pr-ebitda', fmt(ebitda));
+  set('pr-roe', (margin * 1.2).toFixed(1) + '%');
+  document.getElementById('pr-bar').style.width = Math.min(100, Math.max(0, margin * 2.5)) + '%';
+}
+
+// ── FILTER ──
+function filterTable(tableId, query) {
+  const rows = document.querySelectorAll(`#${tableId} tbody tr`);
+  const q = query.toLowerCase();
+  rows.forEach(row => {
+    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+
+function filterByStatus(tableId, status, colIdx) {
+  const rows = document.querySelectorAll(`#${tableId} tbody tr`);
+  rows.forEach(row => {
+    const cell = row.cells[colIdx];
+    if (!status || (cell && cell.textContent.includes(status))) {
+      row.style.display = '';
+    } else {
+      row.style.display = 'none';
+    }
+  });
+}
+
+// ── INIT ──
+renderInventory();
+renderAssets();
+renderEmployees();
+renderClients();
+calcCost();
+calcProfit();
+</script>
+</body>
+</html>
